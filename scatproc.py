@@ -195,15 +195,10 @@ def main():
 
                     #general info
                     ncfile.title='KuKa combined echo and summary data'
-                    ncfile.use_permission = 'Permission of project PI (Prof. Julienne Stroeve j.stroeve@ucl.ac.uk) is required to access, analyse and publish data before 1st January 2023. See MOSAiC Data Policy https://mosaic-expedition.org/wp-content/uploads/2020/12/mosaic_datapolicy.pdf.'
-                    ncfile.assistance = 'For data processing assistance, contact Dr. Rosemary Willatt (r.willatt@ucl.ac.uk) (Stare Mode), Dr. Vishnu Nandan (vishnu.nandan@umanitoba.ca) (Scan Mode), Dr Thomas Newman (t.newman@ucl.ac.uk) (Deconvolution)'
-                    ncfile.file_processed_with = 'KuKaPy translated from ProSensing IDL code by Vishnu Nandan with additions by Rosemary Willatt and Thomas Newman'
-                    ncfile.file_created_by = 'Willatt UCL' 
+                    ncfile.file_processed_with = 'KuKaPy translated from ProSensing IDL code by Vishnu Nandan with additions by Rosemary Willatt, Thomas Newman and Robbie Mallett'
                     import datetime as dt
                     ncfile.date_created = dt.date.today().strftime('%Y%m%d')
                     ncfile.data_type = 'KuKaPy output'
-                    ncfile.kuka_operators = 'Stefan Hendricks, Gunnar Spreen and Oguz Demir (leg 1), Julienne Stroeve, Vishnu Nandan, Rasmus Tonboe and Marcus Huntemann (leg 2) \
-                        Aikaterini Tavri and Mallik Mahmud (leg 4), Gunnar Spreen (leg 5)'
 
 
                     ncfile.current_calibration_loop_power = current_calibration_loop_power
