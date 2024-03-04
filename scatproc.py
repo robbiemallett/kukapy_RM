@@ -2,20 +2,23 @@ import os
 from glob import glob
 import numpy as np
 import sys
-
-from scatlib import read_configuration, read_header, read_raw, compute_range_profiles, calibrate, \
-    polarimetric_processing_scan, nrcs_compute_scan, polarimetric_processing_stare, nrcs_compute_stare , \
-        polarimetric_processing_stare_by_independent_samples
+from netCDF4 import Dataset
+import scatlib
 
 
 def main():
     iscat = input("enter 1 for Ku-Scat; 2 for Ka-Scat: ")
     
     # Reading configurations from configvars in SCATlib.pro
-    configvars = read_configuration(iscat) 
+    configvars = scatlib.read_configuration(iscat)
     
     configvars["raw_data_path"] = sys.argv[1]
     configvars["processed_data_path"] = sys.argv[2]
+
+    if len(sys.argv) == 4:
+        configvars["raw_data_type"] = sys.argv[3] #should read dat or nc
+    else:
+        configvars["raw_data_type"] = 'dat'
 
     instrument_name = configvars["instrument_name"]
     calfile = configvars["calfile"]    #pass this as plain variable since it may get modified if creating a new calfile
@@ -23,9 +26,9 @@ def main():
     processed_data_path = configvars["processed_data_path"]
 
     if iscat == "1":
-        extension_for_files = '/KU*.dat'
+        extension_for_files = f'/KU*.{configvars["raw_data_type"]}'
     else:
-        extension_for_files = '/KA*.dat'
+        extension_for_files = f'/KA*.{configvars["raw_data_type"]}'
     
     
     if configvars["i_batch"] == 0:
@@ -49,30 +52,31 @@ def main():
             print(filename)
             print("=" * 70)
 
+            if configvars["raw_data_type"] == 'dat':
 
-            base_filename = instrument_name + filename.split('/')[-1][-19:-4] #rcw
+                # Read the binary file
 
-            ## READ_HEADER
-            print("READ_HEADER")
-            scatvars ,calvars ,private_config ,file_header_size, sl = read_header(filename, raw_data_path, configvars)
+                base_filename = instrument_name + filename.split('/')[-1][-19:-4] #rcw
 
-            #rcw pickle scatvars ,calvars ,private_config
-            #pickle.dump(scatvars, open(processed_data_path+base_filename+'_scatvars.p', 'wb')) 
-            #pickle.dump(calvars, open(processed_data_path+base_filename+'_calvars.p', 'wb')) 
-            #pickle.dump(configvars, open(processed_data_path+base_filename+'_configvars.p', 'wb')) 
-            #rcw pickling done
+                ## READ_HEADER
+                print("READ_HEADER")
+                scatvars ,calvars ,private_config ,file_header_size, sl = scatlib.read_header(filename, raw_data_path, configvars)
 
-            # rcw get the reference_calibration_loop_power_file         
-            reference_calibration_loop_power_file = 10**(calvars["cal_peak_dbm"]/10.)  
+                # rcw get the reference_calibration_loop_power_file
+                reference_calibration_loop_power_file = 10**(calvars["cal_peak_dbm"]/10.)
 
-            ## READ_RAW
-            print("READ_RAW")
+                ## READ_RAW
+                print("READ_RAW")
 
-            raw, scan_index, sweep_count, transition_flag, elevation, \
-              n_blocks, n_pol, elapsed_time,time_sec,gps_latitude,gps_longitude,\
-                along_track_tilt,cross_track_tilt, independent_sample_index,distance,\
-                    az_proc_index, sweep_count_override =  read_raw(configvars, scatvars,\
-                        filename, file_header_size, sl)#, base_filename, decon, processed_data_path) #rcw added base_filename, decon, processed_data_path
+                raw, scan_index, sweep_count, transition_flag, elevation, \
+                  n_blocks, n_pol, elapsed_time,time_sec,gps_latitude,gps_longitude,\
+                    along_track_tilt,cross_track_tilt, independent_sample_index,distance,\
+                        az_proc_index, sweep_count_override =  scatlib.read_raw(configvars, scatvars,\
+                            filename, file_header_size, sl)#, base_filename, decon, processed_data_path) #rcw added base_filename, decon, processed_data_path
+
+            elif configvars["raw_data_type"] == '.nc':
+
+                # Read the netcdf file
 
 
             print('RRR',n_blocks, len(gps_latitude), len(elevation), len(time_sec))
@@ -111,7 +115,7 @@ def main():
                 print("Compute Range Profiles")
                 ## compute range profiles of reflectivity from raw data
                 range_gate_spacing,ngates,gate_offset,gate_plot_max,pos_height,height, \
-                _range,spec,gate_max_cal,geometric_peak = compute_range_profiles(n_blocks,\
+                _range,spec,gate_max_cal,geometric_peak = scatlib.compute_range_profiles(n_blocks,\
                                                             n_pol,elevation,scan_index,\
                                                             sweep_count,raw,scatvars,private_config\
                                                             ,configvars)
@@ -119,7 +123,7 @@ def main():
                 print("Calibrate")
                 # ## the calibrate procedure is used to generate the transmit distortion matrix 
                 reference_calibration_loop_power, current_calibration_loop_power,ainv,finv, corner_range, \
-                    total_corner_power_vv,total_corner_power_hh = calibrate(calvars,\
+                    total_corner_power_vv,total_corner_power_hh = scatlib.calibrate(calvars,\
                         configvars,gate_offset,gate_plot_max,spec,ngates,n_blocks,n_pol,\
                             _range,gate_max_cal, range_gate_spacing,scatvars,scan_index,sweep_count,\
                                 elevation,base_filename,calfile)
@@ -133,7 +137,7 @@ def main():
                 if max(scan_index) == 1:
                     print("Polarimetric Scan")
                     range_peak_signal,line_elevation,line_height,nlines,rho_hv_vec,\
-                    phase_hv_deg_vec,total_power,range_centroid_signal, L_matrix,c_matrix, echoes_all = polarimetric_processing_scan(scatvars,configvars,\
+                    phase_hv_deg_vec,total_power,range_centroid_signal, L_matrix,c_matrix, echoes_all = scatlib.polarimetric_processing_scan(scatvars,configvars,\
                                 calvars,geometric_peak,scan_index,\
                                 sweep_count,transition_flag,elevation,ngates,\
                                 range_gate_spacing,_range,height,gate_offset,\
@@ -148,7 +152,7 @@ def main():
                     range_peak_signal,line_elevation,n_groups,rho_hv_vec,\
                     phase_hv_deg_vec,total_power,range_centroid_signal, L_matrix,c_matrix, \
                         group_index, n_blocks_per_group, echoes_all \
-                        = polarimetric_processing_stare(scatvars,configvars,calvars,ngates,range_gate_spacing,\
+                        = scatlib.polarimetric_processing_stare(scatvars,configvars,calvars,ngates,range_gate_spacing,\
                             _range,gate_offset,gate_plot_max,spec,ainv,finv,n_blocks, elapsed_time,\
                             scan_index)#, base_filename, decon, processed_data_path,\
                                 #current_calibration_loop_power,reference_calibration_loop_power_file)   #rcw added base_filename, decon
@@ -159,21 +163,21 @@ def main():
 
                     range_peak_signal,line_elevation,n_groups,rho_hv_vec,\
                     phase_hv_deg_vec,total_power,range_centroid_signal, L_matrix,c_matrix, \
-                    group_index, n_blocks_per_group, echoes_all = polarimetric_processing_stare_by_independent_samples(scatvars,\
+                    group_index, n_blocks_per_group, echoes_all = scatlib.polarimetric_processing_stare_by_independent_samples(scatvars,\
                     configvars,calvars,ngates,range_gate_spacing,_range,gate_offset,gate_plot_max,spec,ainv,finv,\
                     n_blocks, elapsed_time, scan_index, independent_sample_index, distance)            
 
 
                 if max(scan_index) == 1:
                     print("nrcs_compute_scan")
-                    nrcs_db = nrcs_compute_scan(scatvars,calvars,configvars,private_config,c_matrix,range_peak_signal,\
+                    nrcs_db = scatlib.nrcs_compute_scan(scatvars,calvars,configvars,private_config,c_matrix,range_peak_signal,\
                             range_centroid_signal,corner_range,pos_height,line_elevation,nlines,reference_calibration_loop_power,\
                             current_calibration_loop_power,L_matrix,processed_data_filename,rho_hv_vec,\
                             phase_hv_deg_vec,total_power,line_height,total_corner_power_vv,total_corner_power_hh,gps_latitude,gps_longitude,calfile)            
 
                 elif max(scan_index) != 1:
                     print("nrcs_compute_stare")
-                    nrcs_db = nrcs_compute_stare(scatvars,calvars,configvars,private_config,c_matrix,range_peak_signal,\
+                    nrcs_db = scatlib.nrcs_compute_stare(scatvars,calvars,configvars,private_config,c_matrix,range_peak_signal,\
                         range_centroid_signal,corner_range,pos_height,n_groups,reference_calibration_loop_power,current_calibration_loop_power,\
                         L_matrix,processed_data_filename,rho_hv_vec,phase_hv_deg_vec,total_power,total_corner_power_vv,total_corner_power_hh,\
                         calfile,time_sec,gps_latitude,gps_longitude,group_index,along_track_tilt,cross_track_tilt,n_blocks_per_group,independent_sample_index)
@@ -182,8 +186,6 @@ def main():
                 # print(echoes_all['vv'])
                 # rcw adding netcdf file storage
                 if decon == 0:
-
-                    from netCDF4 import Dataset
 
                     #create file
                     if max(scan_index) == 1:

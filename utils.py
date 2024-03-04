@@ -3,17 +3,57 @@ import math
 from math import *
 from math import sin, cos, tan, atan, sqrt, atan2
 from glob import glob
+from netCDF4 import Dataset
 import re
 
-import matplotlib.pyplot as plt 
-from matplotlib.patches import Rectangle
+#import matplotlib.pyplot as plt 
+#from matplotlib.patches import Rectangle
 
 
-from astropy.convolution import convolve
+#from astropy.convolution import convolve
 import scipy.ndimage
 import cmath
 import scatlib
 
+def data_to_dict(header_output,raw_output):
+
+    d = {}
+
+    raw_names = ['raw',
+                    'scan_index',
+                    'sweep_count',
+                    'transition_flag',
+                    'elevation',
+                    'n_blocks',
+                    'n_pol',
+                    'elapsed_time',
+                    'time_sec',
+                    'gps_latitude',
+                    'gps_longitude',
+                    'along_track_tilt',
+                    'cross_track_tilt',
+                    'independent_sample_index',
+                    'distance',
+                    'az_proc_index',
+                    'sweep_count_override',
+                   ]
+
+    header_names = ['scatvars',
+                    'calvars',
+                    'private_config',
+                    'file_header_size',
+                    'sl',
+                   ]
+
+    for data, name in zip(header_output,header_names):
+
+        d[name] = data
+
+
+    for data, name in zip(raw_output,raw_names):
+        d[name] = data
+
+    return d
 
 
 def earth_radius(lat):
@@ -26,6 +66,34 @@ def earth_radius(lat):
     R_e = math.sqrt(num/denom)
     
     return R_e
+
+
+def write_nc(configvars, filename, raw_output, header_output):
+
+    with Dataset(configvars['processed_data_path'] + filename[:-4] + '.nc', mode='w', format='NETCDF4') as ncfile:
+
+        d = data_to_dict(header_output, raw_output)
+
+        main = ncfile.createGroup('data')
+
+        for name, value in d.items():
+
+            if name in ['scatvars', 'calvars', 'private_config']:
+                sv = ncfile.createGroup(name)
+                for k, v in value.items():
+                    setattr(sv, k, v)
+            elif name == 'raw':
+                pass
+            else:
+                setattr(main, name, value)
+
+        ncfile.createDimension('n_blocks', ncfile['data'].n_blocks)
+        ncfile.createDimension('n_pol', ncfile['data'].n_pol)
+        ncfile.createDimension('n_gates', ncfile['scatvars'].n_gates)
+
+        counts = ncfile.createVariable('counts', np.float64, ('n_blocks', 'n_pol', 'n_gates'))
+        counts[:] = d['raw']
+
 
 def compute_distance(gps_latitude,gps_longitude,elapsed_time,scatvars,configvars,independent_sample_index):
     lat = gps_latitude
