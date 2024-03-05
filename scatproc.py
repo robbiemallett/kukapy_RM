@@ -4,7 +4,7 @@ import numpy as np
 import sys
 from netCDF4 import Dataset
 import scatlib
-
+import utils
 
 def main():
     iscat = input("enter 1 for Ku-Scat; 2 for Ka-Scat: ")
@@ -52,6 +52,8 @@ def main():
             print(filename)
             print("=" * 70)
 
+            print(configvars['raw_data_type'])
+
             if configvars["raw_data_type"] == 'dat':
 
                 # Read the binary file
@@ -74,9 +76,21 @@ def main():
                         az_proc_index, sweep_count_override =  scatlib.read_raw(configvars, scatvars,\
                             filename, file_header_size, sl)#, base_filename, decon, processed_data_path) #rcw added base_filename, decon, processed_data_path
 
-            elif configvars["raw_data_type"] == '.nc':
+            elif configvars["raw_data_type"] == 'nc':
 
-                # Read the netcdf file
+                print('You have chosen to process a raw data netcdf')
+
+                base_filename = instrument_name + filename.split('/')[-1][-19:-4]
+
+                scatvars, calvars, private_config, file_header_size, raw, scan_index, sweep_count, transition_flag, elevation, \
+                n_blocks, n_pol, elapsed_time, time_sec, gps_latitude, gps_longitude, \
+                along_track_tilt, cross_track_tilt, independent_sample_index, distance, \
+                az_proc_index, sweep_count_override = utils.read_nc(filename)
+
+                reference_calibration_loop_power_file = 10**(calvars["cal_peak_dbm"]/10.)
+
+
+
 
 
             print('RRR',n_blocks, len(gps_latitude), len(elevation), len(time_sec))

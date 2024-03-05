@@ -67,6 +67,111 @@ def earth_radius(lat):
     
     return R_e
 
+def read_nc(filename):
+
+    d = Dataset(filename)
+
+    raw = np.array(d['counts'])
+
+    scan_index = d['data'].scan_index
+    sweep_count = d['data'].sweep_count
+    transition_flag = d['data'].transition_flag
+    elevation = d['data'].elevation
+    n_blocks = d['data'].n_blocks
+    n_pol = d['data'].n_pol
+    elapsed_time = d['data'].elapsed_time
+    time_sec = d['data'].time_sec
+    gps_latitude = d['data'].gps_latitude
+    gps_longitude = d['data'].gps_longitude
+    along_track_tilt = d['data'].along_track_tilt
+    cross_track_tilt = d['data'].cross_track_tilt
+    independent_sample_index = d['data'].independent_sample_index
+    distance = d['data'].distance
+    az_proc_index = d['data'].az_proc_index
+    sweep_count_override = d['data'].sweep_count_override
+    file_header_size = d['data'].file_header_size
+    sl = d['data'].sl
+
+    pcnc = d['private_config']
+    private_config = {}
+    private_config['pedestal_device_file_path'] = pcnc.pedestal_device_file_path
+    private_config['rcb_host'] = pcnc.rcb_host
+    private_config['rcb_port'] = pcnc.rcb_port
+    private_config['rcb_scope_data_device_file_path'] = pcnc.rcb_scope_data_device_file_path
+    private_config['gps_device_file_path'] = pcnc.gps_device_file_path
+    private_config['peer_system_host'] = pcnc.peer_system_host
+    private_config['scat_id'] = pcnc.scat_id
+    private_config['always_master'] = pcnc.always_master
+    private_config['peer_system_enabled'] = pcnc.peer_system_enabled
+    private_config['antenna_beam_width'] = pcnc.antenna_beam_width
+    private_config['corner_reflector_sigma'] = pcnc.corner_reflector_sigma
+    private_config['heater_control_mode'] = pcnc.heater_control_mode
+    private_config['heater_control_set_point'] = pcnc.heater_control_set_point
+    private_config['heater_control_lcd_panel_set_point'] = pcnc.heater_control_lcd_panel_set_point
+    private_config['heater_control_hysteresis'] = pcnc.heater_control_hysteresis
+    private_config['heater_control_proportional_gain'] = pcnc.heater_control_proportional_gain
+    private_config['heater_control_integral_gain'] = pcnc.heater_control_integral_gain
+    private_config['heater_control_minimum_pulse_width_ns'] = pcnc.heater_control_minimum_pulse_width_ns
+    private_config['heater_control_pulse_period_multiplier'] = pcnc.heater_control_pulse_period_multiplier
+    private_config['cooler_set_point'] = pcnc.cooler_set_point
+    private_config['cooler_hysteresis'] = pcnc.cooler_hysteresis
+    private_config['pedestal_max_speed'] = pcnc.pedestal_max_speed
+    private_config['pedestal_azimuth_offset'] = pcnc.pedestal_azimuth_offset
+    private_config['pedestal_elevation_offset'] = pcnc.pedestal_elevation_offset
+    private_config['range_to_antenna_m'] = pcnc.range_to_antenna_m
+    private_config['range_to_antenna_offset_m'] = pcnc.range_to_antenna_offset_m
+    private_config['ad_trig_delay_ns'] = pcnc.ad_trig_delay_ns
+    private_config['synthesizer_trig_delay_ns'] = pcnc.synthesizer_trig_delay_ns
+    private_config['along_track_tilt_offset'] = pcnc.along_track_tilt_offset
+    private_config['cross_track_tilt_offset'] = pcnc.cross_track_tilt_offset
+    private_config['calculate_ground_indices'] = pcnc.calculate_ground_indices
+    private_config['peak_detector_copol_threshold_db'] = pcnc.peak_detector_copol_threshold_db
+    private_config['peak_detector_crosspol_threshold_db'] = pcnc.peak_detector_crosspol_threshold_db
+    private_config['peak_detector_range_window_width_m'] = pcnc.peak_detector_range_window_width_m
+
+    cvnc = d['calvars']
+    calvars = {}
+    calvars['timestamp_seconds'] = cvnc.timestamp_seconds
+    calvars['corner_reflector_vv_power_dbm'] = cvnc.corner_reflector_vv_power_dbm
+    calvars['corner_reflector_hh_power_dbm'] = cvnc.corner_reflector_hh_power_dbm
+    calvars['cal_peak_dbm'] = cvnc.cal_peak_dbm
+    calvars['corner_reflector_range_m'] = cvnc.corner_reflector_range_m
+    calvars['corner_reflector_az'] = cvnc.corner_reflector_az
+    calvars['corner_reflector_el'] = cvnc.corner_reflector_el
+    calvars['chirp_amplitude_dbm'] = cvnc.chirp_amplitude_dbm
+    calvars['chirp_bandwidth_hz'] = cvnc.chirp_bandwidth_hz
+    calvars['chirp_center_frequency_hz'] = cvnc.chirp_center_frequency_hz
+    calvars['chirp_width_ns'] = cvnc.chirp_width_ns
+    calvars['decimation'] = cvnc.decimation
+    calvars['decimation_mode'] = cvnc.decimation_mode
+    calvars['n_summed_gates'] = cvnc.n_summed_gates
+
+    svnc = d['scatvars']
+    scatvars = {}
+    scatvars['ad_clock_frequency_hz'] = svnc.ad_clock_frequency_hz
+    scatvars['chirp_amplitude_dbm'] = svnc.chirp_amplitude_dbm
+    scatvars['chirp_bandwidth_hz'] = svnc.chirp_bandwidth_hz
+    scatvars['chirp_center_frequency_hz'] = svnc.chirp_center_frequency_hz
+    scatvars['chirp_width_ns'] = svnc.chirp_width_ns
+    scatvars['decimation'] = svnc.decimation
+    scatvars['decimation_mode'] = svnc.decimation_mode
+    scatvars['decimation_setting'] = svnc.decimation_setting
+    scatvars['file_roll_interval_ns'] = svnc.file_roll_interval_ns
+    scatvars['frame_delay_ns'] = svnc.frame_delay_ns
+    scatvars['n_gates'] = svnc.n_gates
+    scatvars['n_gates_override'] = svnc.n_gates_override
+    scatvars['n_gates_use_override'] = svnc.n_gates_use_override
+    scatvars['pedestal_height_m'] = svnc.pedestal_height_m
+    scatvars['prp_ns'] = svnc.prp_ns
+    scatvars['range_resolution_m'] = svnc.range_resolution_m
+    scatvars['range_to_corner_reflector_m'] = svnc.range_to_corner_reflector_m
+    scatvars['server_state'] = svnc.server_state
+    scatvars['switch_mode'] = svnc.switch_mode
+
+    return (scatvars ,calvars ,private_config ,file_header_size, raw, scan_index, sweep_count, transition_flag, elevation, \
+                  n_blocks, n_pol, elapsed_time,time_sec,gps_latitude,gps_longitude,\
+                    along_track_tilt,cross_track_tilt, independent_sample_index,distance,\
+                        az_proc_index, sweep_count_override)
 
 def write_nc(configvars, filename, raw_output, header_output):
 

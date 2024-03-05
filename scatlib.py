@@ -10,8 +10,8 @@ import scipy.ndimage
 
 from pathlib import Path
 
-import matplotlib.pyplot as plt 
-from matplotlib.patches import Rectangle
+#import matplotlib.pyplot as plt 
+#from matplotlib.patches import Rectangle
 
 from loading_from_bin import get_file_header_t, get_meta_header_t, data_gathering
 import utils as U
